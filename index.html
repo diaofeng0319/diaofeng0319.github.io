@@ -1,11 +1,836 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <meta charset="utf-8">
-    <title>我的第一个网站</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PDF 工具箱</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#4F46E5;--primary-hover:#4338CA;--primary-light:#EEF2FF;
+  --bg:#F1F5F9;--card:#FFFFFF;--text:#1E293B;--text-secondary:#64748B;
+  --border:#E2E8F0;--danger:#EF4444;--danger-light:#FEF2F2;--success:#10B981;
+  --radius:14px;--radius-sm:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+  --transition:200ms ease;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans SC",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+.header{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:16px 20px;text-align:center;position:sticky;top:0;z-index:100;
+}
+.header h1{font-size:22px;font-weight:700;color:var(--primary);letter-spacing:-0.5px}
+.header p{font-size:13px;color:var(--text-secondary);margin-top:2px}
+.tabs{
+  display:flex;gap:4px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;
+  background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:81px;z-index:99;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:14px;font-weight:500;
+  border:1px solid var(--border);background:var(--card);color:var(--text-secondary);
+  cursor:pointer;transition:all var(--transition);white-space:nowrap;user-select:none;
+}
+.tab:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary-light)}
+.tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.container{max-width:800px;margin:0 auto;padding:20px 16px 40px}
+.section{display:none}
+.section.active{display:block}
+.card{
+  background:var(--card);border-radius:var(--radius);padding:24px;
+  box-shadow:var(--shadow);margin-bottom:16px;
+}
+.card-title{font-size:16px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title .icon{font-size:20px}
+.upload-zone{
+  border:2px dashed var(--border);border-radius:var(--radius);padding:40px 20px;
+  text-align:center;cursor:pointer;transition:all var(--transition);
+  background:var(--card);
+}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--primary);background:var(--primary-light)}
+.upload-zone .upload-icon{font-size:48px;margin-bottom:12px;display:block}
+.upload-zone .upload-text{font-size:15px;font-weight:500;color:var(--text)}
+.upload-zone .upload-hint{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.upload-zone input[type=file]{display:none}
+.file-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.file-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  background:var(--bg);border-radius:var(--radius-sm);
+  border:1px solid var(--border);transition:all var(--transition);
+}
+.file-item .file-icon{font-size:24px;flex-shrink:0}
+.file-item .file-info{flex:1;min-width:0}
+.file-item .file-name{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item .file-size{font-size:12px;color:var(--text-secondary)}
+.file-item .file-actions{display:flex;gap:6px;flex-shrink:0}
+.file-item .btn-icon{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--border);
+  background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all var(--transition);color:var(--text-secondary);
+}
+.file-item .btn-icon:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
+.file-item .btn-icon.danger:hover{background:var(--danger-light);color:var(--danger);border-color:var(--danger)}
+.split-options{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
+.split-option{
+  flex:1;min-width:120px;padding:12px;border:2px solid var(--border);border-radius:var(--radius-sm);
+  text-align:center;cursor:pointer;transition:all var(--transition);font-size:14px;font-weight:500;
+}
+.split-option:hover{border-color:var(--primary);background:var(--primary-light)}
+.split-option.active{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+.range-input{
+  margin-top:12px;display:none;width:100%;padding:10px 14px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:14px;outline:none;transition:border-color var(--transition);
+}
+.range-input:focus{border-color:var(--primary)}
+.range-input.show{display:block}
+.range-hint{font-size:12px;color:var(--text-secondary);margin-top:6px;display:none}
+.range-hint.show{display:block}
+.page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:12px}
+.page-card{
+  position:relative;border:2px solid var(--border);border-radius:var(--radius-sm);
+  overflow:hidden;cursor:pointer;transition:all var(--transition);background:var(--card);
+}
+.page-card:hover{border-color:var(--primary);box-shadow:var(--shadow-md)}
+.page-card.selected{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+.page-card canvas{display:block;width:100%;height:auto}
+.page-card .page-label{
+  text-align:center;padding:6px;font-size:12px;font-weight:500;
+  background:var(--bg);color:var(--text-secondary);
+}
+.page-card.selected .page-label{background:var(--primary-light);color:var(--primary)}
+.page-card .check-overlay{
+  position:absolute;top:8px;right:8px;width:24px;height:24px;
+  border-radius:50%;background:var(--card);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  transition:all var(--transition);
+}
+.page-card.selected .check-overlay{background:var(--primary);border-color:var(--primary);color:#fff}
+.page-card .rotate-controls{
+  display:flex;gap:4px;padding:6px;justify-content:center;background:var(--bg);
+}
+.page-card .rotate-btn{
+  padding:4px 8px;font-size:11px;border:1px solid var(--border);border-radius:6px;
+  background:var(--card);cursor:pointer;transition:all var(--transition);
+}
+.page-card .rotate-btn:hover{background:var(--primary-light);border-color:var(--primary)}
+.page-card .rotate-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 24px;border-radius:var(--radius-sm);font-size:15px;font-weight:600;
+  border:none;cursor:pointer;transition:all var(--transition);width:100%;
+}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#DC2626}
+.status{
+  margin-top:16px;padding:12px 16px;border-radius:var(--radius-sm);
+  font-size:14px;display:none;text-align:center;
+}
+.status.show{display:block}
+.status.processing{background:var(--primary-light);color:var(--primary)}
+.status.success{background:#ECFDF5;color:#059669}
+.status.error{background:var(--danger-light);color:var(--danger)}
+.progress-bar{
+  margin-top:12px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;display:none;
+}
+.progress-bar.show{display:block}
+.progress-bar .progress-fill{
+  height:100%;background:var(--primary);border-radius:3px;
+  transition:width .3s ease;width:0;
+}
+.page-toolbar{
+  display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap;
+}
+.page-toolbar .btn-sm{
+  padding:6px 14px;font-size:13px;border-radius:16px;border:1px solid var(--border);
+  background:var(--card);cursor:pointer;transition:all var(--transition);
+}
+.page-toolbar .btn-sm:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
+.page-toolbar .page-count{font-size:13px;color:var(--text-secondary);margin-left:auto}
+.footer{
+  text-align:center;padding:20px;font-size:12px;color:var(--text-secondary);
+  border-top:1px solid var(--border);margin-top:20px;
+}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-secondary)}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px;display:block}
+@media(max-width:480px){
+  .header h1{font-size:20px}
+  .tabs{padding:8px 10px;top:69px}
+  .tab{padding:6px 12px;font-size:13px}
+  .card{padding:16px}
+  .upload-zone{padding:28px 16px}
+  .page-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+  .split-option{min-width:100px;padding:10px;font-size:13px}
+  .container{padding:12px 10px 30px}
+}
+.spinner{
+  display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tooltip{font-size:12px;color:var(--text-secondary);margin-top:4px}
+.angle-badge{
+  position:absolute;top:8px;left:8px;background:var(--primary);color:#fff;
+  font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;
+}
+</style>
 </head>
 <body>
-    <h1>Hello, GitHub Pages!</h1>
-    <p>这是我的第一个网站，太棒了！</p>
+<header class="header">
+  <h1>📄 PDF 工具箱</h1>
+  <p>合并 · 拆分 · 提取 · 删除 · 旋转 — 全部在本地浏览器完成</p>
+</header>
+
+<nav class="tabs" id="tabNav">
+  <button class="tab active" data-tab="merge">🔗 合并 PDF</button>
+  <button class="tab" data-tab="split">✂️ 拆分 PDF</button>
+  <button class="tab" data-tab="extract">📋 提取页面</button>
+  <button class="tab" data-tab="delete">🗑️ 删除页面</button>
+  <button class="tab" data-tab="rotate">🔄 旋转页面</button>
+</nav>
+
+<main class="container">
+
+  <section class="section active" id="section-merge">
+    <div class="card">
+      <div class="card-title"><span class="icon">🔗</span> 合并 PDF 文件</div>
+      <p class="tooltip">选择多个 PDF 文件，调整顺序后合并为一个 PDF。</p>
+      <div class="upload-zone" id="mergeUploadZone">
+        <span class="upload-icon">📁</span>
+        <div class="upload-text">点击选择或拖拽 PDF 文件到此处</div>
+        <div class="upload-hint">支持同时选择多个文件</div>
+        <input type="file" id="mergeInput" accept=".pdf" multiple>
+      </div>
+      <div class="file-list" id="mergeFileList"></div>
+      <div class="page-toolbar" id="mergeToolbar" style="display:none">
+        <span class="page-count" id="mergeFileCount"></span>
+        <button class="btn-sm" onclick="clearMergeFiles()">清空全部</button>
+      </div>
+      <button class="btn btn-primary" id="mergeBtn" disabled onclick="executeMerge()">
+        <span>合并并下载</span>
+      </button>
+      <div class="progress-bar" id="mergeProgress"><div class="progress-fill"></div></div>
+      <div class="status" id="mergeStatus"></div>
+    </div>
+  </section>
+
+  <section class="section" id="section-split">
+    <div class="card">
+      <div class="card-title"><span class="icon">✂️</span> 拆分 PDF</div>
+      <p class="tooltip">将一个 PDF 拆分为多个文件。</p>
+      <div class="upload-zone" id="splitUploadZone">
+        <span class="upload-icon">📄</span>
+        <div class="upload-text">点击选择或拖拽一个 PDF 文件</div>
+        <div class="upload-hint" id="splitFileName"></div>
+        <input type="file" id="splitInput" accept=".pdf">
+      </div>
+      <div class="split-options" id="splitOptions" style="display:none">
+        <div class="split-option active" data-mode="all" onclick="setSplitMode('all')">📑 每页拆分</div>
+        <div class="split-option" data-mode="range" onclick="setSplitMode('range')">🔢 自定义范围</div>
+      </div>
+      <input type="text" class="range-input" id="rangeInput" placeholder="例如: 1-3, 5, 7-9">
+      <div class="range-hint" id="rangeHint">格式：用逗号分隔，如 1-3, 5, 7-9（页码范围 + 单页）</div>
+      <button class="btn btn-primary" id="splitBtn" disabled onclick="executeSplit()">
+        <span>拆分并下载</span>
+      </button>
+      <div class="progress-bar" id="splitProgress"><div class="progress-fill"></div></div>
+      <div class="status" id="splitStatus"></div>
+    </div>
+  </section>
+
+  <section class="section" id="section-extract">
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> 提取页面</div>
+      <p class="tooltip">选择要保留的页面，导出为新 PDF。</p>
+      <div class="upload-zone" id="extractUploadZone">
+        <span class="upload-icon">📄</span>
+        <div class="upload-text">点击选择或拖拽一个 PDF 文件</div>
+        <div class="upload-hint" id="extractFileName"></div>
+        <input type="file" id="extractInput" accept=".pdf">
+      </div>
+      <div class="page-toolbar" id="extractToolbar" style="display:none">
+        <button class="btn-sm" onclick="selectAllPages('extract')">全选</button>
+        <button class="btn-sm" onclick="deselectAllPages('extract')">取消全选</button>
+        <span class="page-count" id="extractPageCount"></span>
+      </div>
+      <div class="page-grid" id="extractPageGrid"></div>
+      <button class="btn btn-primary" id="extractBtn" disabled onclick="executeExtract()">
+        <span>提取选中页面</span>
+      </button>
+      <div class="progress-bar" id="extractProgress"><div class="progress-fill"></div></div>
+      <div class="status" id="extractStatus"></div>
+    </div>
+  </section>
+
+  <section class="section" id="section-delete">
+    <div class="card">
+      <div class="card-title"><span class="icon">🗑️</span> 删除页面</div>
+      <p class="tooltip">选择要删除的页面，其余页面导出为新 PDF。</p>
+      <div class="upload-zone" id="deleteUploadZone">
+        <span class="upload-icon">📄</span>
+        <div class="upload-text">点击选择或拖拽一个 PDF 文件</div>
+        <div class="upload-hint" id="deleteFileName"></div>
+        <input type="file" id="deleteInput" accept=".pdf">
+      </div>
+      <div class="page-toolbar" id="deleteToolbar" style="display:none">
+        <button class="btn-sm" onclick="selectAllPages('delete')">全选</button>
+        <button class="btn-sm" onclick="deselectAllPages('delete')">取消全选</button>
+        <span class="page-count" id="deletePageCount"></span>
+      </div>
+      <div class="page-grid" id="deletePageGrid"></div>
+      <button class="btn btn-primary" id="deleteBtn" disabled onclick="executeDelete()">
+        <span>删除选中页面</span>
+      </button>
+      <div class="progress-bar" id="deleteProgress"><div class="progress-fill"></div></div>
+      <div class="status" id="deleteStatus"></div>
+    </div>
+  </section>
+
+  <section class="section" id="section-rotate">
+    <div class="card">
+      <div class="card-title"><span class="icon">🔄</span> 旋转页面</div>
+      <p class="tooltip">选择页面并设置旋转角度（顺时针）。</p>
+      <div class="upload-zone" id="rotateUploadZone">
+        <span class="upload-icon">📄</span>
+        <div class="upload-text">点击选择或拖拽一个 PDF 文件</div>
+        <div class="upload-hint" id="rotateFileName"></div>
+        <input type="file" id="rotateInput" accept=".pdf">
+      </div>
+      <div class="split-options" id="rotateAngleSelector" style="display:none">
+        <div class="split-option active" data-angle="90" onclick="setRotateAngle(90)">↻ 90°</div>
+        <div class="split-option" data-angle="180" onclick="setRotateAngle(180)">↻ 180°</div>
+        <div class="split-option" data-angle="270" onclick="setRotateAngle(270)">↻ 270°</div>
+      </div>
+      <div class="page-grid" id="rotatePageGrid"></div>
+      <button class="btn btn-primary" id="rotateBtn" disabled onclick="executeRotate()">
+        <span>旋转并下载</span>
+      </button>
+      <div class="progress-bar" id="rotateProgress"><div class="progress-fill"></div></div>
+      <div class="status" id="rotateStatus"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  🔒 所有文件处理均在本地浏览器完成，不会上传到任何服务器
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script>
+// ============================================================
+// PDF 工具箱 - 主程序
+// ============================================================
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+const state = {
+  merge: { files: [] },
+  split: { file: null, mode: 'all', ranges: '' },
+  extract: { file: null, selectedPages: new Set(), pdfDoc: null, totalPages: 0 },
+  delete: { file: null, selectedPages: new Set(), pdfDoc: null, totalPages: 0 },
+  rotate: { file: null, rotations: {}, pdfDoc: null, totalPages: 0, defaultAngle: 90 },
+};
+
+// ========== TAB SWITCHING ==========
+document.getElementById('tabNav').addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + tab.dataset.tab).classList.add('active');
+});
+
+// ========== UPLOAD ZONE SETUP ==========
+function setupUploadZone(zoneId, inputId, handler, multi) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const files = multi ? Array.from(e.dataTransfer.files) : [e.dataTransfer.files[0]];
+    handler(files.filter(f => f && f.type === 'application/pdf'));
+  });
+  input.addEventListener('change', () => {
+    const files = multi ? Array.from(input.files) : [input.files[0]];
+    handler(files.filter(f => f && f.type === 'application/pdf'));
+    input.value = '';
+  });
+}
+
+// ========== MERGE ==========
+setupUploadZone('mergeUploadZone', 'mergeInput', (files) => {
+  if (files.length === 0) return;
+  state.merge.files.push(...files);
+  renderMergeFiles();
+}, true);
+
+function renderMergeFiles() {
+  const list = document.getElementById('mergeFileList');
+  const toolbar = document.getElementById('mergeToolbar');
+  const count = document.getElementById('mergeFileCount');
+  const btn = document.getElementById('mergeBtn');
+  const files = state.merge.files;
+  if (files.length === 0) { list.innerHTML = ''; toolbar.style.display = 'none'; btn.disabled = true; return; }
+  toolbar.style.display = 'flex';
+  count.textContent = '共 ' + files.length + ' 个文件';
+  btn.disabled = false;
+  list.innerHTML = files.map((f, i) => '<div class="file-item"><span class="file-icon">📄</span><div class="file-info"><div class="file-name" title="' + escHtml(f.name) + '">' + escHtml(f.name) + '</div><div class="file-size">' + formatSize(f.size) + ' · 第 ' + (i + 1) + ' 位</div></div><div class="file-actions"><button class="btn-icon" onclick="moveMergeFile(' + i + ',-1)" ' + (i === 0 ? 'disabled' : '') + ' title="上移">▲</button><button class="btn-icon" onclick="moveMergeFile(' + i + ',1)" ' + (i === files.length - 1 ? 'disabled' : '') + ' title="下移">▼</button><button class="btn-icon danger" onclick="removeMergeFile(' + i + ')" title="移除">✕</button></div></div>').join('');
+}
+
+function moveMergeFile(index, direction) {
+  const files = state.merge.files;
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= files.length) return;
+  [files[index], files[newIndex]] = [files[newIndex], files[index]];
+  renderMergeFiles();
+}
+
+function removeMergeFile(index) { state.merge.files.splice(index, 1); renderMergeFiles(); }
+function clearMergeFiles() { state.merge.files = []; renderMergeFiles(); setStatus('merge', '', ''); }
+
+// ========== SPLIT ==========
+setupUploadZone('splitUploadZone', 'splitInput', (files) => {
+  if (files.length === 0) return;
+  state.split.file = files[0];
+  document.getElementById('splitFileName').textContent = files[0].name + ' (' + formatSize(files[0].size) + ')';
+  document.getElementById('splitOptions').style.display = 'flex';
+  document.getElementById('splitBtn').disabled = false;
+  setStatus('split', '', '');
+  updateSplitModeUI();
+}, false);
+
+function setSplitMode(mode) { state.split.mode = mode; updateSplitModeUI(); }
+
+function updateSplitModeUI() {
+  document.querySelectorAll('#splitOptions .split-option').forEach(o => o.classList.toggle('active', o.dataset.mode === state.split.mode));
+  document.getElementById('rangeInput').classList.toggle('show', state.split.mode === 'range');
+  document.getElementById('rangeHint').classList.toggle('show', state.split.mode === 'range');
+}
+
+// ========== EXTRACT / DELETE / ROTATE UPLOADS ==========
+setupUploadZone('extractUploadZone', 'extractInput', (files) => {
+  if (files.length === 0) return;
+  state.extract.file = files[0];
+  document.getElementById('extractFileName').textContent = files[0].name + ' (' + formatSize(files[0].size) + ')';
+  loadPagePreviews('extract');
+}, false);
+
+setupUploadZone('deleteUploadZone', 'deleteInput', (files) => {
+  if (files.length === 0) return;
+  state.delete.file = files[0];
+  document.getElementById('deleteFileName').textContent = files[0].name + ' (' + formatSize(files[0].size) + ')';
+  loadPagePreviews('delete');
+}, false);
+
+setupUploadZone('rotateUploadZone', 'rotateInput', (files) => {
+  if (files.length === 0) return;
+  state.rotate.file = files[0];
+  document.getElementById('rotateFileName').textContent = files[0].name + ' (' + formatSize(files[0].size) + ')';
+  loadPagePreviews('rotate');
+}, false);
+
+// ========== PAGE PREVIEWS ==========
+async function loadPagePreviews(mode) {
+  const st = state[mode];
+  if (!st.file) return;
+  setStatus(mode, 'processing', '正在加载页面预览...');
+  showProgress(mode, true);
+  updateProgress(mode, 10);
+
+  try {
+    const arrayBuffer = await st.file.arrayBuffer();
+    st.pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+    st.totalPages = st.pdfDoc.numPages;
+    st.selectedPages = new Set();
+    st.rotations = {};
+
+    updateProgress(mode, 30);
+
+    const grid = document.getElementById(mode + 'PageGrid');
+    const toolbar = document.getElementById(mode + 'Toolbar');
+    const btn = document.getElementById(mode + 'Btn');
+
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-secondary)">正在渲染 ' + st.totalPages + ' 页缩略图...</div>';
+
+    const scale = window.innerWidth <= 480 ? 0.35 : 0.5;
+    let html = '';
+    for (let i = 1; i <= st.totalPages; i++) {
+      const page = await st.pdfDoc.getPage(i);
+      const viewport = page.getViewport({ scale });
+      html += '<div class="page-card" data-page="' + (i - 1) + '" data-mode="' + mode + '" onclick="togglePage(\'' + mode + '\',' + (i - 1) + ')"><canvas id="' + mode + '-canvas-' + i + '" width="' + viewport.width + '" height="' + viewport.height + '"></canvas><div class="check-overlay">✓</div><div class="page-label">第 ' + i + ' 页</div>' + (mode === 'rotate' ? '<div class="rotate-controls" onclick="event.stopPropagation()"><button class="rotate-btn" onclick="setPageRotation(\'' + mode + '\',' + (i - 1) + ',90)">90°</button><button class="rotate-btn" onclick="setPageRotation(\'' + mode + '\',' + (i - 1) + ',180)">180°</button><button class="rotate-btn" onclick="setPageRotation(\'' + mode + '\',' + (i - 1) + ',270)">270°</button></div>' : '') + '</div>';
+    }
+    grid.innerHTML = html;
+
+    for (let i = 1; i <= st.totalPages; i++) {
+      const canvas = document.getElementById(mode + '-canvas-' + i);
+      if (!canvas) continue;
+      const page = await st.pdfDoc.getPage(i);
+      const viewport = page.getViewport({ scale });
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      updateProgress(mode, 30 + Math.floor((i / st.totalPages) * 60));
+    }
+
+    if (toolbar) toolbar.style.display = 'flex';
+    btn.disabled = false;
+    if (mode !== 'rotate') {
+      const pc = document.getElementById(mode + 'PageCount');
+      if (pc) pc.textContent = '已选 0 / ' + st.totalPages + ' 页';
+    }
+    if (mode === 'rotate') {
+      document.getElementById('rotateAngleSelector').style.display = 'flex';
+    }
+
+    updateProgress(mode, 100);
+    setStatus(mode, 'success', '预览加载完成！共 ' + st.totalPages + ' 页');
+  } catch (err) {
+    console.error(err);
+    setStatus(mode, 'error', '加载失败：' + err.message);
+  }
+  showProgress(mode, false);
+}
+
+// ========== PAGE SELECTION ==========
+function togglePage(mode, pageIndex) {
+  if (mode === 'rotate') return;
+  const st = state[mode];
+  const card = document.querySelector('.page-card[data-mode="' + mode + '"][data-page="' + pageIndex + '"]');
+  if (!card) return;
+  if (st.selectedPages.has(pageIndex)) { st.selectedPages.delete(pageIndex); card.classList.remove('selected'); }
+  else { st.selectedPages.add(pageIndex); card.classList.add('selected'); }
+  updateSelectionCount(mode);
+}
+
+function selectAllPages(mode) {
+  const st = state[mode];
+  for (let i = 0; i < st.totalPages; i++) st.selectedPages.add(i);
+  document.querySelectorAll('.page-card[data-mode="' + mode + '"]').forEach(c => c.classList.add('selected'));
+  updateSelectionCount(mode);
+}
+
+function deselectAllPages(mode) {
+  const st = state[mode];
+  st.selectedPages.clear();
+  document.querySelectorAll('.page-card[data-mode="' + mode + '"]').forEach(c => c.classList.remove('selected'));
+  updateSelectionCount(mode);
+}
+
+function updateSelectionCount(mode) {
+  const st = state[mode];
+  const el = document.getElementById(mode + 'PageCount');
+  if (el) el.textContent = '已选 ' + st.selectedPages.size + ' / ' + st.totalPages + ' 页';
+}
+
+// ========== ROTATE ==========
+function setRotateAngle(angle) {
+  state.rotate.defaultAngle = angle;
+  document.querySelectorAll('#rotateAngleSelector .split-option').forEach(o => { o.classList.toggle('active', parseInt(o.dataset.angle) === angle); });
+}
+
+function setPageRotation(mode, pageIndex, angle) {
+  const st = state[mode];
+  const current = st.rotations[pageIndex] || 0;
+  st.rotations[pageIndex] = (current + angle) % 360;
+  if (st.rotations[pageIndex] === 0) delete st.rotations[pageIndex];
+  const card = document.querySelector('.page-card[data-mode="' + mode + '"][data-page="' + pageIndex + '"]');
+  if (!card) return;
+  const oldBadge = card.querySelector('.angle-badge');
+  if (oldBadge) oldBadge.remove();
+  if (st.rotations[pageIndex]) {
+    const badge = document.createElement('div');
+    badge.className = 'angle-badge';
+    badge.textContent = '↻' + st.rotations[pageIndex] + '°';
+    card.appendChild(badge);
+  }
+  const canvas = card.querySelector('canvas');
+  if (canvas) {
+    const deg = st.rotations[pageIndex] || 0;
+    canvas.style.transform = deg ? 'rotate(' + deg + 'deg)' : '';
+    canvas.style.transformOrigin = 'center center';
+    canvas.style.transition = 'transform 0.3s ease';
+  }
+  card.querySelectorAll('.rotate-btn').forEach(b => b.classList.remove('active'));
+}
+
+// ========== EXECUTE: MERGE ==========
+async function executeMerge() {
+  if (state.merge.files.length === 0) return;
+  const btn = document.getElementById('mergeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span><span>正在合并...</span>';
+  setStatus('merge', 'processing', '正在合并 ' + state.merge.files.length + ' 个文件...');
+  showProgress('merge', true);
+  try {
+    const mergedPdf = await PDFLib.PDFDocument.create();
+    for (let i = 0; i < state.merge.files.length; i++) {
+      updateProgress('merge', Math.floor((i / state.merge.files.length) * 90));
+      const arrayBuffer = await state.merge.files[i].arrayBuffer();
+      const pdf = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+      const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      pages.forEach(p => mergedPdf.addPage(p));
+    }
+    updateProgress('merge', 95);
+    const pdfBytes = await mergedPdf.save();
+    const totalPages = mergedPdf.getPageCount();
+    downloadBlob(pdfBytes, 'merged.pdf', 'application/pdf');
+    updateProgress('merge', 100);
+    setStatus('merge', 'success', '合并完成！共 ' + totalPages + ' 页');
+  } catch (err) {
+    setStatus('merge', 'error', '合并失败：' + err.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span>合并并下载</span>';
+  showProgress('merge', false);
+}
+
+// ========== EXECUTE: SPLIT ==========
+async function executeSplit() {
+  if (!state.split.file) return;
+  const btn = document.getElementById('splitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span><span>正在拆分...</span>';
+  setStatus('split', 'processing', '正在拆分 PDF...');
+  showProgress('split', true);
+  try {
+    const arrayBuffer = await state.split.file.arrayBuffer();
+    const srcPdf = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    const totalPages = srcPdf.getPageCount();
+    updateProgress('split', 20);
+    let pageRanges = [];
+    if (state.split.mode === 'all') {
+      for (let i = 0; i < totalPages; i++) pageRanges.push([i]);
+    } else {
+      const rangeStr = document.getElementById('rangeInput').value.trim();
+      if (!rangeStr) throw new Error('请输入页码范围');
+      pageRanges = parseRanges(rangeStr, totalPages);
+      if (pageRanges.length === 0) throw new Error('无效的页码范围');
+    }
+    const results = [];
+    const baseName = state.split.file.name.replace(/\.pdf$/i, '');
+    for (let r = 0; r < pageRanges.length; r++) {
+      updateProgress('split', 20 + Math.floor((r / pageRanges.length) * 70));
+      const newPdf = await PDFLib.PDFDocument.create();
+      const pages = await newPdf.copyPages(srcPdf, pageRanges[r]);
+      pages.forEach(p => newPdf.addPage(p));
+      const bytes = await newPdf.save();
+      let name;
+      if (pageRanges[r].length === 1) {
+        name = baseName + '_第' + (pageRanges[r][0] + 1) + '页.pdf';
+      } else {
+        name = baseName + '_第' + (pageRanges[r][0] + 1) + '-' + (pageRanges[r][pageRanges[r].length - 1] + 1) + '页.pdf';
+      }
+      results.push({ bytes: bytes, name: name });
+    }
+    updateProgress('split', 95);
+    if (results.length === 1) {
+      downloadBlob(results[0].bytes, results[0].name, 'application/pdf');
+    } else {
+      await downloadAsZip(results);
+    }
+    updateProgress('split', 100);
+    setStatus('split', 'success', '拆分完成！共生成 ' + results.length + ' 个文件');
+  } catch (err) {
+    setStatus('split', 'error', '拆分失败：' + err.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span>拆分并下载</span>';
+  showProgress('split', false);
+}
+
+function parseRanges(rangeStr, totalPages) {
+  const parts = rangeStr.split(/[,，\s]+/).filter(Boolean);
+  const ranges = [];
+  for (const part of parts) {
+    if (part.includes('-')) {
+      const segs = part.split('-');
+      const start = parseInt(segs[0].trim()), end = parseInt(segs[1].trim());
+      if (isNaN(start) || isNaN(end) || start < 1 || end > totalPages || start > end) continue;
+      for (let i = start - 1; i < end; i++) ranges.push(i);
+    } else {
+      const page = parseInt(part.trim());
+      if (isNaN(page) || page < 1 || page > totalPages) continue;
+      ranges.push(page - 1);
+    }
+  }
+  if (ranges.length === 0) return [];
+  ranges.sort((a, b) => a - b);
+  const groups = [], current = [ranges[0]];
+  for (let i = 1; i < ranges.length; i++) {
+    if (ranges[i] === current[current.length - 1] + 1) { current.push(ranges[i]); }
+    else { groups.push(current); current = [ranges[i]]; }
+  }
+  groups.push(current);
+  return groups;
+}
+
+// ========== EXECUTE: EXTRACT ==========
+async function executeExtract() {
+  if (!state.extract.file || state.extract.selectedPages.size === 0) return;
+  const btn = document.getElementById('extractBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span><span>正在提取...</span>';
+  setStatus('extract', 'processing', '正在提取选中页面...');
+  showProgress('extract', true);
+  try {
+    const arrayBuffer = await state.extract.file.arrayBuffer();
+    const srcPdf = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    updateProgress('extract', 30);
+    const pageIndices = Array.from(state.extract.selectedPages).sort((a, b) => a - b);
+    const newPdf = await PDFLib.PDFDocument.create();
+    const pages = await newPdf.copyPages(srcPdf, pageIndices);
+    pages.forEach(p => newPdf.addPage(p));
+    updateProgress('extract', 80);
+    const bytes = await newPdf.save();
+    const baseName = state.extract.file.name.replace(/\.pdf$/i, '');
+    downloadBlob(bytes, baseName + '_提取.pdf', 'application/pdf');
+    updateProgress('extract', 100);
+    setStatus('extract', 'success', '提取完成！已导出 ' + pages.length + ' 页');
+  } catch (err) {
+    setStatus('extract', 'error', '提取失败：' + err.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span>提取选中页面</span>';
+  showProgress('extract', false);
+}
+
+// ========== EXECUTE: DELETE ==========
+async function executeDelete() {
+  if (!state.delete.file || state.delete.selectedPages.size === 0) return;
+  const btn = document.getElementById('deleteBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span><span>正在删除...</span>';
+  setStatus('delete', 'processing', '正在删除选中页面...');
+  showProgress('delete', true);
+  try {
+    const arrayBuffer = await state.delete.file.arrayBuffer();
+    const srcPdf = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    updateProgress('delete', 30);
+    const deleteSet = state.delete.selectedPages;
+    const keepIndices = [];
+    for (let i = 0; i < state.delete.totalPages; i++) { if (!deleteSet.has(i)) keepIndices.push(i); }
+    if (keepIndices.length === 0) throw new Error('不能删除所有页面');
+    const newPdf = await PDFLib.PDFDocument.create();
+    const pages = await newPdf.copyPages(srcPdf, keepIndices);
+    pages.forEach(p => newPdf.addPage(p));
+    updateProgress('delete', 80);
+    const bytes = await newPdf.save();
+    const baseName = state.delete.file.name.replace(/\.pdf$/i, '');
+    downloadBlob(bytes, baseName + '_已删除页面.pdf', 'application/pdf');
+    updateProgress('delete', 100);
+    setStatus('delete', 'success', '删除完成！已导出 ' + pages.length + ' 页（删除了 ' + deleteSet.size + ' 页）');
+  } catch (err) {
+    setStatus('delete', 'error', '删除失败：' + err.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span>删除选中页面</span>';
+  showProgress('delete', false);
+}
+
+// ========== EXECUTE: ROTATE ==========
+async function executeRotate() {
+  if (!state.rotate.file) return;
+  const btn = document.getElementById('rotateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span><span>正在旋转...</span>';
+  setStatus('rotate', 'processing', '正在旋转页面...');
+  showProgress('rotate', true);
+  try {
+    const arrayBuffer = await state.rotate.file.arrayBuffer();
+    const srcPdf = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    const pages = srcPdf.getPages();
+    updateProgress('rotate', 30);
+    const hasSpecific = Object.keys(state.rotate.rotations).length > 0;
+    if (hasSpecific) {
+      for (const [idx, angle] of Object.entries(state.rotate.rotations)) {
+        const i = parseInt(idx);
+        if (i < pages.length) pages[i].setRotation(PDFLib.degrees(angle));
+      }
+    } else {
+      for (const page of pages) page.setRotation(PDFLib.degrees(state.rotate.defaultAngle));
+    }
+    updateProgress('rotate', 80);
+    const bytes = await srcPdf.save();
+    const baseName = state.rotate.file.name.replace(/\.pdf$/i, '');
+    downloadBlob(bytes, baseName + '_旋转.pdf', 'application/pdf');
+    updateProgress('rotate', 100);
+    setStatus('rotate', 'success', '旋转完成！');
+  } catch (err) {
+    setStatus('rotate', 'error', '旋转失败：' + err.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span>旋转并下载</span>';
+  showProgress('rotate', false);
+}
+
+// ========== UTILITIES ==========
+function downloadBlob(bytes, filename, mimeType) {
+  const blob = new Blob([bytes], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+async function downloadAsZip(results) {
+  const zip = new JSZip();
+  for (const r of results) zip.file(r.name, r.bytes);
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'pdf_split.zip';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function escHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function setStatus(mode, type, message) {
+  const el = document.getElementById(mode + 'Status');
+  el.className = 'status ' + type + (message ? ' show' : '');
+  el.textContent = message;
+}
+
+function showProgress(mode, show) {
+  document.getElementById(mode + 'Progress').classList.toggle('show', show);
+}
+
+function updateProgress(mode, percent) {
+  const fill = document.querySelector('#' + mode + 'Progress .progress-fill');
+  if (fill) fill.style.width = percent + '%';
+}
+
+console.log('PDF 工具箱已就绪');
+console.log('  pdf-lib:', typeof PDFLib !== 'undefined' ? 'OK' : 'MISSING');
+console.log('  pdf.js:', typeof pdfjsLib !== 'undefined' ? 'OK' : 'MISSING');
+console.log('  JSZip:', typeof JSZip !== 'undefined' ? 'OK' : 'MISSING');
+</script>
+
 </body>
 </html>
